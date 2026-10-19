@@ -13,6 +13,7 @@ public class UpdateTaskRequest {
     private String description;
     private TaskPriority priority;
     private LocalDateTime dueDate;
+    private Long assigneeId;
 
     public UpdateTaskRequest() {
     }
@@ -33,5 +34,12 @@ public class UpdateTaskRequest {
     public LocalDateTime getDueDate() { return dueDate; }
     public void setDueDate(LocalDateTime dueDate) {
         this.dueDate = dueDate;
+    }
+
+    public Long getAssignedToId() {
+        return assigneeId;
+    }
+    public void setAssignedToId(Long assigneeId) {
+        this.assigneeId = assigneeId;
     }
 }
