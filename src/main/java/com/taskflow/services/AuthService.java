@@ -4,27 +4,31 @@ package com.taskflow.services;
 import com.taskflow.dto.RegisterRequest;
 import com.taskflow.dto.LoginRequest;
 import com.taskflow.dto.UserResponse;
+import com.taskflow.exception.ConflictException;
 import com.taskflow.models.User;
 import com.taskflow.repositories.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.taskflow.dto.AuthResponse;
 @Service
 public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     @Transactional
     public UserResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
+            throw new ConflictException("Email already exists");
         }
 
         String passwordHash = passwordEncoder.encode(request.getPassword());
@@ -36,8 +40,9 @@ public class AuthService {
         return toResponse(savedUser);
     }
 
+
     @Transactional(readOnly = true)
-    public UserResponse login(LoginRequest request) {
+    public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() ->
                         new IllegalArgumentException("Invalid email or password"));
 
@@ -45,7 +50,7 @@ public class AuthService {
             throw new IllegalArgumentException("Invalid email or password");
         }
 
-        return toResponse(user);
+        return new AuthResponse(toResponse(user), jwtService.generateToken(user), "Bearer");
     }
 
     private UserResponse toResponse(User user) {

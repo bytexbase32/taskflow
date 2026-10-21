@@ -11,7 +11,8 @@ import com.taskflow.repositories.TeamRepository;
 import com.taskflow.repositories.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.taskflow.exception.ResourceNotFoundException;
+import com.taskflow.exception.ForbiddenException;
 import java.util.List;
 
 @Service
@@ -30,7 +31,7 @@ public class TeamService {
     @Transactional
     public TeamResponse createTeam(CreateTeamRequest request, Long currentUserId) {
 
-        User owner = userRepository.findById(currentUserId).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User owner = userRepository.findById(currentUserId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Team team = new Team(request.getName(), request.getDescription());
 
@@ -68,7 +69,7 @@ public class TeamService {
         requireOwner(teamId, currentUserId);
 
         Team team = findTeam(teamId);
-        User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (teamMemberRepository.existsByTeam_IdAndUser_Id(teamId, userId)) {
             throw new IllegalArgumentException("User is already a team member");
@@ -89,7 +90,7 @@ public class TeamService {
 
         TeamMember membership = teamMemberRepository.findById(
                 new com.taskflow.models.TeamMemberId(teamId, userId)).orElseThrow(() ->
-                new IllegalArgumentException("Team membership not found"));
+                new ResourceNotFoundException("Team membership not found"));
 
         teamMemberRepository.delete(membership);
     }
@@ -101,7 +102,7 @@ public class TeamService {
 
     private void requireMembership(Long teamId, Long userId) {
         if (!teamMemberRepository.existsByTeam_IdAndUser_Id(teamId, userId)) {
-            throw new IllegalArgumentException("You are not a member of this team");
+            throw new ForbiddenException("You are not a member of this team");
         }
     }
 
@@ -111,7 +112,7 @@ public class TeamService {
                 .orElseThrow(() -> new IllegalArgumentException("Team membership not found"));
 
         if (membership.getRole() != TeamRole.OWNER) {
-            throw new IllegalArgumentException("Only the team owner can manage members");
+            throw new ForbiddenException("Only the team owner can manage members");
         }
     }
 

@@ -1,6 +1,8 @@
 package com.taskflow.services;
 
 import com.taskflow.dto.UserResponse;
+import com.taskflow.exception.ConflictException;
+import com.taskflow.exception.ResourceNotFoundException;
 import com.taskflow.models.User;
 import com.taskflow.repositories.UserRepository;
 import org.springframework.stereotype.Service;
@@ -34,8 +36,7 @@ public class UserService {
             boolean emailUsed = userRepository.existsByEmail(email);
 
             if (emailUsed && !email.equals(user.getEmail())) {
-                throw new IllegalArgumentException(
-                        "Email is already in use");
+                throw new ConflictException("Email already exists");
             }
 
             user.setEmail(email);
@@ -45,7 +46,7 @@ public class UserService {
     }
 
     private User findUser(Long userId) {
-        return userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     private UserResponse toResponse(User user) {

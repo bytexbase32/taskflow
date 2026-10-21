@@ -5,7 +5,6 @@ import com.taskflow.dto.CreateTaskRequest;
 import com.taskflow.dto.TaskResponse;
 import com.taskflow.dto.UpdateTaskRequest;
 import com.taskflow.models.Task;
-import com.taskflow.models.TaskPriority;
 import com.taskflow.models.Team;
 import com.taskflow.models.User;
 import com.taskflow.repositories.TaskRepository;
@@ -14,7 +13,8 @@ import com.taskflow.repositories.TeamRepository;
 import com.taskflow.repositories.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.taskflow.exception.ForbiddenException;
+import com.taskflow.exception.ResourceNotFoundException;
 @Service
 public class TaskService {
 
@@ -39,7 +39,8 @@ public class TaskService {
     public TaskResponse createTask(CreateTaskRequest request, Long currentUserId) {
         Team team = teamRepository.findById(request.getTeamId()).orElseThrow(() ->  new IllegalArgumentException("Team not found"));
 
-        User creator = userRepository.findById(currentUserId).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User creator = userRepository.findById(currentUserId).orElseThrow(() ->
+                new ResourceNotFoundException("User not found"));
 
         boolean creatorIsMember = teamMemberRepository.existsByTeam_IdAndUser_Id(team.getId(), creator.getId());
 
@@ -50,7 +51,7 @@ public class TaskService {
         User assignee = null;
 
         if (request.getAssignedToId() != null) {
-            assignee = userRepository.findById(request.getAssignedToId()).orElseThrow(() -> new IllegalArgumentException("Assignee not found"));
+            assignee = userRepository.findById(request.getAssignedToId()).orElseThrow(() -> new ResourceNotFoundException("Assignee not found"));
 
             boolean assigneeIsMember = teamMemberRepository.existsByTeam_IdAndUser_Id(team.getId(), assignee.getId());
 
@@ -96,10 +97,11 @@ public class TaskService {
         return response;
     }
 
-
     @Transactional(readOnly = true)
-    public java.util.List<TaskResponse> getTasksByTeam(Long teamId, Long currentUserId) {
-
+    public java.util.List<TaskResponse> getTasksByTeam(
+            Long teamId,
+            Long currentUserId
+    ) {
         requireTeamMembership(teamId, currentUserId);
 
         return taskRepository.findByTeam_Id(teamId)
@@ -142,7 +144,7 @@ public class TaskService {
 
         if (request.getAssignedToId() != null) {
             User assignee = userRepository.findById(request.getAssignedToId()).orElseThrow(() ->
-                            new IllegalArgumentException("Assignee not found"));
+                    new IllegalArgumentException("Assignee not found"));
 
             boolean isMember = teamMemberRepository.existsByTeam_IdAndUser_Id(teamId, assignee.getId());
 
@@ -178,15 +180,16 @@ public class TaskService {
 
     private Task findTask(Long taskId) {
         return taskRepository.findById(taskId).orElseThrow(() ->
-                        new IllegalArgumentException("Task not found"));
+                new ResourceNotFoundException("Task not found"));
     }
 
     private void requireTeamMembership(Long teamId, Long userId) {
         boolean isMember = teamMemberRepository.existsByTeam_IdAndUser_Id(teamId, userId);
 
         if (!isMember) {
-            throw new IllegalArgumentException("You are not a member of this team");
+            throw new ForbiddenException(
+                    "You are not a member of this team"
+            );
         }
     }
-
 }
