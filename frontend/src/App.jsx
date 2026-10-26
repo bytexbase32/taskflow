@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Teams from "./pages/Teams";
 import Settings from "./pages/Settings";
+import Home from "./pages/Home";
 
 function RequireAuth({ children }) {
     const token = localStorage.getItem("token");
@@ -15,7 +16,7 @@ function RequireAuth({ children }) {
 export default function App() {
     return (
         <Routes>
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route
