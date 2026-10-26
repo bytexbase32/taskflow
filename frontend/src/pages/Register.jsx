@@ -27,7 +27,7 @@ export default function Register() {
         setIsSubmitting(true);
         try {
             const response = await fetch(
-                "http://localhost:8080/api/v1/auth/register",
+                "/api/v1/auth/register",
                 {
                     method: "POST",
                     headers: {
