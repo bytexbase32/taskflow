@@ -14,6 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.taskflow.exception.ResourceNotFoundException;
 import com.taskflow.exception.ForbiddenException;
 import java.util.List;
+import com.taskflow.dto.AddTeamMemberRequest;
+import com.taskflow.dto.TeamMemberResponse;
+import com.taskflow.exception.ConflictException;
+import java.util.Objects;
 
 @Service
 public class TeamService {
@@ -22,7 +26,8 @@ public class TeamService {
     private final TeamMemberRepository teamMemberRepository;
     private final UserRepository userRepository;
 
-    public TeamService(TeamRepository teamRepository, TeamMemberRepository teamMemberRepository, UserRepository userRepository) {
+    public TeamService(TeamRepository teamRepository, TeamMemberRepository teamMemberRepository,
+            UserRepository userRepository) {
         this.teamRepository = teamRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.userRepository = userRepository;
@@ -31,7 +36,8 @@ public class TeamService {
     @Transactional
     public TeamResponse createTeam(CreateTeamRequest request, Long currentUserId) {
 
-        User owner = userRepository.findById(currentUserId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        User owner = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Team team = new Team(request.getName(), request.getDescription());
 
@@ -89,15 +95,15 @@ public class TeamService {
         }
 
         TeamMember membership = teamMemberRepository.findById(
-                new com.taskflow.models.TeamMemberId(teamId, userId)).orElseThrow(() ->
-                new ResourceNotFoundException("Team membership not found"));
+                new com.taskflow.models.TeamMemberId(teamId, userId))
+                .orElseThrow(() -> new ResourceNotFoundException("Team membership not found"));
 
         teamMemberRepository.delete(membership);
     }
 
     private Team findTeam(Long teamId) {
-        return teamRepository.findById(teamId).orElseThrow(() ->
-                        new IllegalArgumentException("Team not found"));
+        return teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
     }
 
     private void requireMembership(Long teamId, Long userId) {
@@ -109,10 +115,12 @@ public class TeamService {
     private void requireOwner(Long teamId, Long userId) {
         TeamMember membership = teamMemberRepository
                 .findById(new com.taskflow.models.TeamMemberId(teamId, userId))
-                .orElseThrow(() -> new IllegalArgumentException("Team membership not found"));
+                .orElseThrow(() -> new ForbiddenException(
+                        "Only the team owner can manage members"));
 
         if (membership.getRole() != TeamRole.OWNER) {
-            throw new ForbiddenException("Only the team owner can manage members");
+            throw new ForbiddenException(
+                    "Only the team owner can manage members");
         }
     }
 
@@ -124,4 +132,47 @@ public class TeamService {
         response.setCreatedAt(team.getCreatedAt());
         return response;
     }
+
+    @Transactional(readOnly = true)
+    public List<TeamMemberResponse> getTeamMembers(
+            Long teamId, Long currentUserId) {
+
+        requireMembership(teamId, currentUserId);
+        findTeam(teamId);
+
+        return teamMemberRepository.findByTeam_Id(teamId)
+                .stream()
+                .map(member -> new TeamMemberResponse(
+                        member.getUser().getId(),
+                        member.getUser().getName(),
+                        member.getUser().getEmail(),
+                        member.getRole(),
+                        member.getJoinedAt()))
+                .toList();
+    }
+
+    @Transactional
+    public void addMemberByEmail(
+            Long teamId,
+            AddTeamMemberRequest request,
+            Long currentUserId) {
+
+        requireOwner(teamId, currentUserId);
+
+        Team team = findTeam(teamId);
+
+        User user = userRepository.findByEmail(
+                request.email().trim().toLowerCase())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (teamMemberRepository.existsByTeam_IdAndUser_Id(
+                teamId, user.getId())) {
+            throw new ConflictException(
+                    "User is already a team member");
+        }
+
+        teamMemberRepository.save(
+                new TeamMember(team, user, TeamRole.MEMBER));
+    }
+
 }

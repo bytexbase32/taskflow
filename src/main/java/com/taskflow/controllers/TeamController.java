@@ -10,6 +10,10 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.taskflow.dto.AddTeamMemberRequest;
+import com.taskflow.dto.TeamMemberResponse;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/api/v1/teams")
@@ -60,4 +64,24 @@ public class TeamController {
     private Long currentUserId(Jwt jwt) {
         return Long.parseLong(jwt.getSubject());
     }
+
+    @GetMapping("/{id}/members")
+    public List<TeamMemberResponse> getTeamMembers(
+            @PathVariable Long id,
+            @AuthenticationPrincipal Jwt jwt) {
+        return teamService.getTeamMembers(id, currentUserId(jwt));
+    }
+
+    @PostMapping("/{id}/members")
+    public ResponseEntity<Void> addMemberByEmail(
+            @PathVariable Long id,
+            @Valid @RequestBody AddTeamMemberRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        teamService.addMemberByEmail(
+                id, request, currentUserId(jwt));
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
 }
