@@ -12,6 +12,24 @@ export async function apiRequest(path, options = {}) {
         },
     });
 
+    // The session has expired or the token is no longer valid.
+    // Don't interfere with login or registration errors.
+    const isAuthEndpoint =
+        path.startsWith("/auth/login") ||
+        path.startsWith("/auth/register");
+
+    if (response.status === 401 && token && !isAuthEndpoint) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        if (
+            window.location.pathname !== "/login" &&
+            window.location.pathname !== "/register"
+        ) {
+            window.location.replace("/login?session=expired");
+        }
+    }
+
     if (response.status === 204) {
         return null;
     }

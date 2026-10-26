@@ -45,6 +45,12 @@ public class TaskController {
         return taskService.getTaskById(id, currentUserId(jwt));
     }
 
+    @GetMapping("/my-tasks")
+    public List<TaskResponse> getMyTasks(
+            @AuthenticationPrincipal Jwt jwt) {
+        return taskService.getMyTasks(currentUserId(jwt));
+    }
+
     @PatchMapping("/{id}")
     public TaskResponse updateTask(
             @PathVariable Long id,

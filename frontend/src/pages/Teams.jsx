@@ -144,109 +144,58 @@ export default function Teams() {
 
     return (
         <AppLayout title="Teams">
-            <Link
-                to="/dashboard"
-                className="text-sm font-medium text-indigo-600"
-            >
-                ← Back to Dashboard
-            </Link>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h2 className="text-xl font-semibold text-slate-900">
+                        My Teams
+                    </h2>
+                    <p className="mt-1 text-sm text-slate-600">
+                        Create teams and manage their tasks and members.
+                    </p>
+                </div>
 
-            <h1 className="mt-6 text-2xl font-bold text-slate-900">My Teams</h1>
-            <p className="mt-2 text-slate-600">
-                Create a team and manage its tasks.
-            </p>
-
-            {error && (
-                <p role="alert" className="mt-4 text-sm text-red-600">
-                    {error}
-                </p>
-            )}
-            {success && (
-                <p role="status" className="mt-4 text-sm text-green-600">
-                    {success}
-                </p>
-            )}
-
-            <form
-                onSubmit={handleCreateTeam}
-                className="mt-6 max-w-xl rounded-xl bg-white p-6 shadow-sm"
-            >
-                <h2 className="text-lg font-semibold">Create a team</h2>
-
-                <label
-                    htmlFor="teamName"
-                    className="mt-4 block text-sm font-medium text-slate-700"
+                <Link
+                    to="/dashboard"
+                    className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
                 >
-                    Team name
-                </label>
-                <input
-                    id="teamName"
-                    required
-                    maxLength={100}
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    placeholder="e.g. Development Team"
-                    className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2"
-                />
+                    Back to Dashboard
+                </Link>
+            </div>
 
-                <label
-                    htmlFor="teamDescription"
-                    className="mt-4 block text-sm font-medium text-slate-700"
-                >
-                    Description
-                </label>
-                <textarea
-                    id="teamDescription"
-                    value={description}
-                    onChange={(event) => setDescription(event.target.value)}
-                    placeholder="What is this team working on?"
-                    rows={3}
-                    className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2"
-                />
-
-                <button
-                    type="submit"
-                    disabled={saving}
-                    className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white disabled:opacity-60"
-                >
-                    {saving ? "Creating..." : "Create team"}
-                </button>
-            </form>
-
-            <section className="mt-8">
+            <section className="mt-6">
                 <h2 className="text-lg font-semibold text-slate-900">
                     Your teams
                 </h2>
 
                 {loading ? (
-                    <p className="mt-4 text-slate-600">Loading teams...</p>
+                    <p className="mt-3 text-slate-600">Loading teams...</p>
                 ) : teams.length === 0 ? (
-                    <p className="mt-4 text-slate-600">
-                        No teams yet. Create your first team above.
+                    <p className="mt-3 text-slate-600">
+                        No teams yet. Create your first team below.
                     </p>
                 ) : (
-                    <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {teams.map((team) => (
                             <article
                                 key={team.id}
-                                className="rounded-xl bg-white p-5 shadow-sm"
+                                className="rounded-lg bg-white p-4 shadow-sm"
                             >
                                 <h3 className="font-semibold text-slate-900">
                                     {team.name}
                                 </h3>
-                                <p className="mt-2 text-sm text-slate-600">
+                                <p className="mt-1 text-sm text-slate-600">
                                     {team.description || "No description"}
                                 </p>
                                 <Link
                                     to={`/tasks?teamId=${team.id}`}
-                                    className="mt-4 inline-block text-sm font-semibold text-indigo-600"
+                                    className="mt-3 inline-block text-sm font-semibold text-indigo-600"
                                 >
                                     View tasks →
                                 </Link>
                                 <button
                                     type="button"
                                     onClick={() => handleViewMembers(team)}
-                                    className="mt-4 ml-4 text-sm font-semibold text-indigo-600"
+                                    className="mt-3 ml-4 text-sm font-semibold text-indigo-600"
                                 >
                                     View members
                                 </button>
@@ -256,7 +205,7 @@ export default function Teams() {
                 )}
             </section>
             {selectedTeam && (
-                <section className="mt-8 rounded-xl bg-white p-6 shadow-sm">
+                <section className="mt-6 rounded-lg bg-white p-4 shadow-sm">
                     <h2 className="text-lg font-semibold text-slate-900">
                         Members — {selectedTeam.name}
                     </h2>
@@ -269,7 +218,7 @@ export default function Teams() {
                     ) && (
                         <form
                             onSubmit={handleAddMember}
-                            className="mt-4 flex flex-col gap-3 sm:flex-row"
+                            className="mt-3 flex flex-col gap-3 sm:flex-row"
                         >
                             <input
                                 type="email"
@@ -293,17 +242,17 @@ export default function Teams() {
                     )}
 
                     {membersLoading ? (
-                        <p className="mt-4 text-slate-600">
+                        <p className="mt-3 text-slate-600">
                             Loading members...
                         </p>
                     ) : members.length === 0 ? (
-                        <p className="mt-4 text-slate-600">No members found.</p>
+                        <p className="mt-3 text-slate-600">No members found.</p>
                     ) : (
-                        <ul className="mt-4 divide-y divide-slate-200">
+                        <ul className="mt-3 divide-y divide-slate-200">
                             {members.map((member) => (
                                 <li
                                     key={member.id}
-                                    className="flex items-center justify-between py-3"
+                                    className="flex items-center justify-between py-2"
                                 >
                                     <div>
                                         <p className="font-medium text-slate-900">
@@ -349,6 +298,65 @@ export default function Teams() {
                     )}
                 </section>
             )}
+
+            {error && (
+                <p role="alert" className="mt-3 text-sm text-red-600">
+                    {error}
+                </p>
+            )}
+            {success && (
+                <p role="status" className="mt-3 text-sm text-green-600">
+                    {success}
+                </p>
+            )}
+
+            <form
+                onSubmit={handleCreateTeam}
+                className="mt-5 max-w-xl rounded-lg bg-white p-4 shadow-sm"
+            >
+                <h2 className="text-base font-semibold text-slate-900">
+                    Create a team
+                </h2>
+
+                <label
+                    htmlFor="teamName"
+                    className="mt-3 block text-sm font-medium text-slate-700"
+                >
+                    Team name
+                </label>
+                <input
+                    id="teamName"
+                    required
+                    maxLength={100}
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    placeholder="e.g. Development Team"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                />
+
+                <label
+                    htmlFor="teamDescription"
+                    className="mt-3 block text-sm font-medium text-slate-700"
+                >
+                    Description
+                </label>
+                <textarea
+                    id="teamDescription"
+                    value={description}
+                    onChange={(event) => setDescription(event.target.value)}
+                    placeholder="What is this team working on?"
+                    rows={2}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                />
+
+                <button
+                    type="submit"
+                    disabled={saving}
+                    className="mt-3 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-60"
+                >
+                    {saving ? "Creating..." : "Create team"}
+                </button>
+            </form>
         </AppLayout>
     );
 }

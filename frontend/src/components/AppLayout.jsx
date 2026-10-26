@@ -51,9 +51,9 @@ export default function AppLayout({ children, title, actions }) {
             <aside
                 className={`${
                     isMenuOpen ? "block" : "hidden"
-                } fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white md:sticky md:top-0 md:block md:h-screen`}
+                } fixed inset-y-0 left-0 z-50 w-56 bg-slate-900 text-white md:sticky md:top-0 md:block md:h-screen`}
             >
-                <div className="flex items-center justify-between border-b border-slate-700 px-6 py-5">
+                <div className="flex items-center justify-between border-b border-slate-700 px-5 py-4">
                     <Link
                         to="/dashboard"
                         onClick={() => setIsMenuOpen(false)}
@@ -72,7 +72,7 @@ export default function AppLayout({ children, title, actions }) {
                     </button>
                 </div>
 
-                <nav className="space-y-1 px-3 py-6">
+                <nav className="space-y-1 px-3 py-5">
                     {navigation.map((group) => (
                         <div key={group.section} className="mb-6">
                             <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -141,7 +141,7 @@ export default function AppLayout({ children, title, actions }) {
                     </div>
                 </header>
 
-                <main className="p-4 sm:p-6">{children}</main>
+                <main className="p-4 lg:p-5 xl:p-6">{children}</main>
             </div>
         </div>
     );

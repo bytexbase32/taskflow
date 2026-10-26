@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.taskflow.exception.ForbiddenException;
 import com.taskflow.exception.ResourceNotFoundException;
+
 @Service
 public class TaskService {
 
@@ -27,8 +28,7 @@ public class TaskService {
             TaskRepository taskRepository,
             TeamRepository teamRepository,
             UserRepository userRepository,
-            TeamMemberRepository teamMemberRepository
-    ) {
+            TeamMemberRepository teamMemberRepository) {
         this.taskRepository = taskRepository;
         this.teamRepository = teamRepository;
         this.userRepository = userRepository;
@@ -37,10 +37,11 @@ public class TaskService {
 
     @Transactional
     public TaskResponse createTask(CreateTaskRequest request, Long currentUserId) {
-        Team team = teamRepository.findById(request.getTeamId()).orElseThrow(() ->  new IllegalArgumentException("Team not found"));
+        Team team = teamRepository.findById(request.getTeamId())
+                .orElseThrow(() -> new IllegalArgumentException("Team not found"));
 
-        User creator = userRepository.findById(currentUserId).orElseThrow(() ->
-                new ResourceNotFoundException("User not found"));
+        User creator = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         boolean creatorIsMember = teamMemberRepository.existsByTeam_IdAndUser_Id(team.getId(), creator.getId());
 
@@ -51,7 +52,8 @@ public class TaskService {
         User assignee = null;
 
         if (request.getAssignedToId() != null) {
-            assignee = userRepository.findById(request.getAssignedToId()).orElseThrow(() -> new ResourceNotFoundException("Assignee not found"));
+            assignee = userRepository.findById(request.getAssignedToId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Assignee not found"));
 
             boolean assigneeIsMember = teamMemberRepository.existsByTeam_IdAndUser_Id(team.getId(), assignee.getId());
 
@@ -100,11 +102,18 @@ public class TaskService {
     @Transactional(readOnly = true)
     public java.util.List<TaskResponse> getTasksByTeam(
             Long teamId,
-            Long currentUserId
-    ) {
+            Long currentUserId) {
         requireTeamMembership(teamId, currentUserId);
 
         return taskRepository.findByTeam_Id(teamId)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<TaskResponse> getMyTasks(Long currentUserId) {
+        return taskRepository.findAllByTeamMemberUserId(currentUserId)
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -143,8 +152,8 @@ public class TaskService {
         }
 
         if (request.getAssignedToId() != null) {
-            User assignee = userRepository.findById(request.getAssignedToId()).orElseThrow(() ->
-                    new IllegalArgumentException("Assignee not found"));
+            User assignee = userRepository.findById(request.getAssignedToId())
+                    .orElseThrow(() -> new IllegalArgumentException("Assignee not found"));
 
             boolean isMember = teamMemberRepository.existsByTeam_IdAndUser_Id(teamId, assignee.getId());
 
@@ -179,8 +188,7 @@ public class TaskService {
     }
 
     private Task findTask(Long taskId) {
-        return taskRepository.findById(taskId).orElseThrow(() ->
-                new ResourceNotFoundException("Task not found"));
+        return taskRepository.findById(taskId).orElseThrow(() -> new ResourceNotFoundException("Task not found"));
     }
 
     private void requireTeamMembership(Long teamId, Long userId) {
@@ -188,8 +196,7 @@ public class TaskService {
 
         if (!isMember) {
             throw new ForbiddenException(
-                    "You are not a member of this team"
-            );
+                    "You are not a member of this team");
         }
     }
 }
