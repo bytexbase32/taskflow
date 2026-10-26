@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const navigation = [
     {
@@ -18,7 +19,10 @@ const navigation = [
 
 export default function AppLayout({ children, title, actions }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
+    const profileRef = useRef(null);
 
     function isActive(path) {
         if (path === "/tasks") {
@@ -28,14 +32,49 @@ export default function AppLayout({ children, title, actions }) {
         return location.pathname === path;
     }
 
-    const userName = (() => {
-        try {
-            const user = JSON.parse(localStorage.getItem("user"));
-            return user?.name || "User";
-        } catch {
-            return "User";
+    let user = {};
+
+    try {
+        user = JSON.parse(localStorage.getItem("user") || "{}") || {};
+    } catch {
+        user = {};
+    }
+
+    const userName = user.name || "User";
+    const userEmail = user.email || "";
+
+    useEffect(() => {
+        function handleOutsideClick(event) {
+            if (
+                profileRef.current &&
+                !profileRef.current.contains(event.target)
+            ) {
+                setIsProfileOpen(false);
+            }
         }
-    })();
+
+        function handleEscape(event) {
+            if (event.key === "Escape") {
+                setIsProfileOpen(false);
+                setIsMenuOpen(false);
+            }
+        }
+
+        document.addEventListener("mousedown", handleOutsideClick);
+        document.addEventListener("keydown", handleEscape);
+
+        return () => {
+            document.removeEventListener("mousedown", handleOutsideClick);
+            document.removeEventListener("keydown", handleEscape);
+        };
+    }, []);
+
+    function handleLogout() {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setIsProfileOpen(false);
+        navigate("/login", { replace: true });
+    }
 
     return (
         <div className="flex min-h-screen bg-slate-100">
@@ -131,13 +170,59 @@ export default function AppLayout({ children, title, actions }) {
 
                     <div className="flex items-center gap-3 sm:gap-4">
                         {actions}
-                        <button
-                            type="button"
-                            aria-label={`User profile: ${userName}`}
-                            className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-200"
-                        >
-                            {userName.charAt(0).toUpperCase()}
-                        </button>
+
+                        <div className="relative" ref={profileRef}>
+                            <button
+                                type="button"
+                                aria-label="Open profile menu"
+                                aria-haspopup="menu"
+                                aria-expanded={isProfileOpen}
+                                onClick={() =>
+                                    setIsProfileOpen((open) => !open)
+                                }
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                            >
+                                {userName.charAt(0).toUpperCase()}
+                            </button>
+
+                            {isProfileOpen && (
+                                <div
+                                    role="menu"
+                                    className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white py-2 shadow-lg"
+                                >
+                                    <div className="border-b border-slate-100 px-4 py-3">
+                                        <p className="truncate text-sm font-semibold text-slate-900">
+                                            {userName}
+                                        </p>
+                                        {userEmail && (
+                                            <p className="mt-1 truncate text-xs text-slate-500">
+                                                {userEmail}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <Link
+                                        to="/settings"
+                                        role="menuitem"
+                                        onClick={() =>
+                                            setIsProfileOpen(false)
+                                        }
+                                        className="block px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50"
+                                    >
+                                        Settings
+                                    </Link>
+
+                                    <button
+                                        type="button"
+                                        role="menuitem"
+                                        onClick={handleLogout}
+                                        className="w-full px-4 py-2.5 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
+                                    >
+                                        Log out
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </header>
 
