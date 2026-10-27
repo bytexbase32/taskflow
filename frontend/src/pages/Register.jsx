@@ -68,9 +68,21 @@ export default function Register() {
     return (
         <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
             <section className="w-full max-w-md rounded-xl bg-white p-8 shadow-sm">
-                <h1 className="text-3xl font-bold text-slate-900">
+                <Link
+                    to="/"
+                    className="inline-flex items-center gap-2 rounded-lg text-2xl font-bold tracking-tight text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    aria-label="TaskFlow homepage"
+                >
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white">
+                        ✓
+                    </span>
+                    TaskFlow
+                </Link>
+
+                <h1 className="mt-6 text-2xl font-bold text-slate-900">
                     Create account
                 </h1>
+
                 <p className="mt-2 text-slate-600">
                     Get started with TaskFlow.
                 </p>

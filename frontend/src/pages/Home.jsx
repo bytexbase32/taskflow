@@ -104,9 +104,21 @@ function DashboardPreview() {
                             </span>
                         </div>
                         {[
-                            ["Build the dashboard", "Completed", "bg-emerald-100 text-emerald-700"],
-                            ["Connect the API", "In progress", "bg-blue-100 text-blue-700"],
-                            ["Review team tasks", "To do", "bg-amber-100 text-amber-700"],
+                            [
+                                "Build the dashboard",
+                                "Completed",
+                                "bg-emerald-100 text-emerald-700",
+                            ],
+                            [
+                                "Connect the API",
+                                "In progress",
+                                "bg-blue-100 text-blue-700",
+                            ],
+                            [
+                                "Review team tasks",
+                                "To do",
+                                "bg-amber-100 text-amber-700",
+                            ],
                         ].map(([task, status, style]) => (
                             <div
                                 key={task}
@@ -130,6 +142,8 @@ function DashboardPreview() {
 }
 
 export default function Home() {
+    const isAuthenticated = Boolean(localStorage.getItem("token"));
+
     return (
         <main className="min-h-screen overflow-hidden bg-white text-slate-900">
             <header className="border-b border-slate-100">
@@ -144,19 +158,31 @@ export default function Home() {
                         TaskFlow
                     </Link>
 
-                    <div className="flex items-center gap-3 sm:gap-6">
-                        <Link
-                            to="/login"
-                            className="text-sm font-medium text-slate-600 transition hover:text-indigo-600"
-                        >
-                            Log in
-                        </Link>
-                        <Link
-                            to="/register"
-                            className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
-                        >
-                            Get started
-                        </Link>
+                    <div className="flex items-center gap-3">
+                        {isAuthenticated ? (
+                            <Link
+                                to="/dashboard"
+                                className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                            >
+                                Go to Dashboard
+                            </Link>
+                        ) : (
+                            <>
+                                <Link
+                                    to="/login"
+                                    className="rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:text-indigo-600"
+                                >
+                                    Log in
+                                </Link>
+
+                                <Link
+                                    to="/register"
+                                    className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                                >
+                                    Get Started
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </nav>
             </header>
@@ -178,9 +204,9 @@ export default function Home() {
                         </h1>
 
                         <p className="mt-6 max-w-lg text-base leading-7 text-slate-600 sm:text-lg">
-                            TaskFlow is a project management application I
-                            built to explore full-stack development, from a
-                            React interface to a Spring Boot API and PostgreSQL
+                            TaskFlow is a project management application I built
+                            to explore full-stack development, from a React
+                            interface to a Spring Boot API and PostgreSQL
                             database.
                         </p>
 
@@ -189,7 +215,8 @@ export default function Home() {
                                 to="/register"
                                 className="rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
                             >
-                                Try the application <span aria-hidden="true">→</span>
+                                Try the application{" "}
+                                <span aria-hidden="true">→</span>
                             </Link>
                             <a
                                 href="#project"
@@ -214,7 +241,10 @@ export default function Home() {
                 </div>
             </section>
 
-            <section id="project" className="border-y border-slate-100 bg-slate-50/70">
+            <section
+                id="project"
+                className="border-y border-slate-100 bg-slate-50/70"
+            >
                 <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
                     <div className="max-w-2xl">
                         <p className="text-sm font-semibold text-indigo-600">
@@ -261,8 +291,8 @@ export default function Home() {
                             Built across the full stack
                         </h2>
                         <p className="mt-4 leading-7 text-slate-600">
-                            The project brings together a modern frontend,
-                            a Java backend, persistent data storage, and a
+                            The project brings together a modern frontend, a
+                            Java backend, persistent data storage, and a
                             containerized development environment.
                         </p>
                     </div>
@@ -289,14 +319,17 @@ export default function Home() {
                         See the project in action
                     </h2>
                     <p className="mx-auto mt-4 max-w-xl leading-7 text-slate-300">
-                        Create an account to explore task management,
-                        teams, and the dashboard.
+                        Create an account to explore task management, teams, and
+                        the dashboard.
                     </p>
                     <Link
-                        to="/register"
+                        to={isAuthenticated ? "/dashboard" : "/register"}
                         className="mt-7 inline-flex rounded-lg bg-indigo-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-400"
                     >
-                        Get started <span aria-hidden="true" className="ml-2">→</span>
+                        {isAuthenticated ? "Go to Dashboard" : "Get Started"}{" "}
+                        <span aria-hidden="true" className="ml-2">
+                            →
+                        </span>
                     </Link>
                 </div>
             </section>

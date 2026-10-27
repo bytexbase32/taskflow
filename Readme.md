@@ -100,7 +100,7 @@ The backend Docker image uses Java 25, and the frontend build uses Node.js 22 th
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/losikkdjhbejs/taskflow.git
+git clone git@github.com:bytexbase32/taskflow.git
 cd taskflow
 ```
 

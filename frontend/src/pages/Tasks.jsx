@@ -1,4 +1,5 @@
 import AppLayout from "../components/AppLayout";
+import ConfirmModal from "../components/ConfirmModal";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { apiRequest } from "../api";
@@ -57,6 +58,8 @@ export default function Tasks() {
     const [teamsLoading, setTeamsLoading] = useState(true);
     const [teamsError, setTeamsError] = useState("");
     const [selectedCreateTeamId, setSelectedCreateTeamId] = useState("");
+    const [taskToDelete, setTaskToDelete] = useState(null);
+    const [deletingTask, setDeletingTask] = useState(false);
 
     useEffect(() => {
         async function loadTasks() {
@@ -171,30 +174,31 @@ export default function Tasks() {
         }
     }
 
-    async function handleDeleteTask(taskId) {
-        const confirmed = window.confirm(
-            "Are you sure you want to delete this task?",
-        );
+    async function handleDeleteTask() {
+        if (!taskToDelete || deletingTask) return;
 
-        if (!confirmed) return;
-
+        setDeletingTask(true);
         setError("");
 
         try {
-            await apiRequest(`/tasks/${taskId}`, {
+            await apiRequest(`/tasks/${taskToDelete.id}`, {
                 method: "DELETE",
             });
 
             setTasks((currentTasks) =>
-                currentTasks.filter((task) => task.id !== taskId),
+                currentTasks.filter((task) => task.id !== taskToDelete.id),
             );
 
-            if (editingTaskId === taskId) {
+            if (editingTaskId === taskToDelete.id) {
                 setEditingTaskId(null);
                 setEditTaskTitle("");
             }
+
+            setTaskToDelete(null);
         } catch (err) {
             setError(err.message);
+        } finally {
+            setDeletingTask(false);
         }
     }
 
@@ -286,477 +290,464 @@ export default function Tasks() {
             : tasks.filter((task) => task.status === activeFilter);
     return (
         <AppLayout title="My Tasks">
-                    <>
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div>
-                                <h1 className="text-xl font-semibold text-slate-900">
-                                    My Tasks
-                                </h1>
-                                <p className="mt-1 text-sm text-slate-600">
-                                    Manage and track your tasks here.
-                                </p>
-                            </div>
+            <>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h1 className="text-xl font-semibold text-slate-900">
+                            My Tasks
+                        </h1>
+                        <p className="mt-1 text-sm text-slate-600">
+                            Manage and track your tasks here.
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setEditingTaskId(null);
+                            setEditTaskTitle("");
+                            setShowCreateForm((current) => !current);
+                        }}
+                        className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                    >
+                        + Create task
+                    </button>
+                </div>
+                {error && (
+                    <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                        <p>{error}</p>
+                        <Link
+                            to="/tasks"
+                            className="mt-2 inline-block font-medium underline"
+                        >
+                            Choose another team
+                        </Link>
+                    </div>
+                )}
+                {showCreateForm && (
+                    <div className="mt-4 rounded-lg bg-white p-4 shadow-sm">
+                        <h2 className="text-lg font-semibold text-slate-900">
+                            Create a new task
+                        </h2>
+
+                        <form className="mt-4" onSubmit={handleCreateTask}>
+                            {!teamId && (
+                                <>
+                                    <label
+                                        htmlFor="createTaskTeam"
+                                        className="block text-sm font-medium text-slate-700"
+                                    >
+                                        Team
+                                    </label>
+
+                                    <select
+                                        id="createTaskTeam"
+                                        value={selectedCreateTeamId}
+                                        onChange={(event) =>
+                                            setSelectedCreateTeamId(
+                                                event.target.value,
+                                            )
+                                        }
+                                        required
+                                        className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
+                                    >
+                                        <option value="">Select a team</option>
+                                        {teams.map((team) => (
+                                            <option
+                                                key={team.id}
+                                                value={team.id}
+                                            >
+                                                {team.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </>
+                            )}
+                            <label
+                                htmlFor="taskTitle"
+                                className="block text-sm font-medium text-slate-700"
+                            >
+                                Task title
+                            </label>
+                            <input
+                                id="taskTitle"
+                                type="text"
+                                placeholder="Enter task title"
+                                value={newTaskTitle}
+                                onChange={(event) =>
+                                    setNewTaskTitle(event.target.value)
+                                }
+                                className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                            />
+                            <label
+                                htmlFor="taskPriority"
+                                className="mt-4 block text-sm font-medium text-slate-700"
+                            >
+                                Priority
+                            </label>
+                            <select
+                                id="taskPriority"
+                                value={newTaskPriority}
+                                onChange={(event) =>
+                                    setNewTaskPriority(event.target.value)
+                                }
+                                className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                            >
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                            </select>
+                            <label
+                                htmlFor="taskDueDate"
+                                className="mt-4 block text-sm font-medium text-slate-700"
+                            >
+                                Due date
+                            </label>
+                            <input
+                                id="taskDueDate"
+                                type="date"
+                                value={newTaskDueDate}
+                                onChange={(event) =>
+                                    setNewTaskDueDate(event.target.value)
+                                }
+                                className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                            />
+                            <button
+                                type="submit"
+                                className="mt-4 mr-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+                            >
+                                Create task
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowCreateForm(false)}
+                                className="mt-4 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                            >
+                                Cancel
+                            </button>
+                        </form>
+                    </div>
+                )}
+                {editingTaskId !== null && (
+                    <div className="mt-6 rounded-xl bg-white p-6 shadow-sm">
+                        <h2 className="text-lg font-semibold text-slate-900">
+                            Edit task
+                        </h2>
+
+                        <form className="mt-4" onSubmit={handleUpdateTask}>
+                            <label
+                                htmlFor="editTaskTitle"
+                                className="block text-sm font-medium text-slate-700"
+                            >
+                                Task title
+                            </label>
+
+                            <input
+                                id="editTaskTitle"
+                                type="text"
+                                value={editTaskTitle}
+                                onChange={(event) =>
+                                    setEditTaskTitle(event.target.value)
+                                }
+                                className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                            />
+                            <label className="block">
+                                <span className="mb-1 block text-sm font-medium">
+                                    Status
+                                </span>
+                                <select
+                                    value={editTaskStatus}
+                                    onChange={(event) =>
+                                        setEditTaskStatus(event.target.value)
+                                    }
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                                >
+                                    <option value="To do">To do</option>
+                                    <option value="In progress">
+                                        In progress
+                                    </option>
+                                    <option value="Completed">Completed</option>
+                                </select>
+                            </label>
+                            <label className="block">
+                                <span className="mb-1 block text-sm font-medium">
+                                    Priority
+                                </span>
+                                <select
+                                    value={editTaskPriority}
+                                    onChange={(event) =>
+                                        setEditTaskPriority(event.target.value)
+                                    }
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                                >
+                                    <option value="Low">Low</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="High">High</option>
+                                </select>
+                            </label>
+                            <label className="block">
+                                <span className="mb-1 block text-sm font-medium">
+                                    Due date
+                                </span>
+                                <input
+                                    type="date"
+                                    value={editTaskDueDate}
+                                    onChange={(event) =>
+                                        setEditTaskDueDate(event.target.value)
+                                    }
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                                />
+                            </label>
+
+                            <button
+                                type="submit"
+                                className="mt-4 mr-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+                            >
+                                Save changes
+                            </button>
 
                             <button
                                 type="button"
                                 onClick={() => {
                                     setEditingTaskId(null);
                                     setEditTaskTitle("");
-                                    setShowCreateForm((current) => !current);
                                 }}
-                                className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                                className="mt-4 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                             >
-                                + Create task
+                                Cancel
                             </button>
+                        </form>
+                    </div>
+                )}
+                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    {stats.map((stat) => (
+                        <div
+                            key={stat.label}
+                            className="rounded-xl bg-white p-6 shadow-sm"
+                        >
+                            <p className="text-sm text-slate-500">
+                                {stat.label}
+                            </p>
+
+                            <p className="mt-2 text-3xl font-bold text-slate-900">
+                                {stat.value}
+                            </p>
                         </div>
-                        {error && (
-                            <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
-                                <p>{error}</p>
-                                <Link
-                                    to="/tasks"
-                                    className="mt-2 inline-block font-medium underline"
-                                >
-                                    Choose another team
-                                </Link>
-                            </div>
-                        )}
-                        {showCreateForm && (
-                            <div className="mt-4 rounded-lg bg-white p-4 shadow-sm">
-                                <h2 className="text-lg font-semibold text-slate-900">
-                                    Create a new task
-                                </h2>
+                    ))}
+                </div>
+                <div className="mt-6 flex flex-wrap gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setActiveFilter("All")}
+                        className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                            activeFilter === "All"
+                                ? "bg-indigo-600 text-white"
+                                : "bg-white text-slate-600 hover:bg-slate-200"
+                        }`}
+                    >
+                        All
+                    </button>
 
-                                <form
-                                    className="mt-4"
-                                    onSubmit={handleCreateTask}
-                                >
-                                    {!teamId && (
-                                        <>
-                                            <label
-                                                htmlFor="createTaskTeam"
-                                                className="block text-sm font-medium text-slate-700"
-                                            >
-                                                Team
-                                            </label>
+                    <button
+                        type="button"
+                        onClick={() => setActiveFilter("To do")}
+                        className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                            activeFilter === "To do"
+                                ? "bg-indigo-600 text-white"
+                                : "bg-white text-slate-600 hover:bg-slate-200"
+                        }`}
+                    >
+                        To do
+                    </button>
 
-                                            <select
-                                                id="createTaskTeam"
-                                                value={selectedCreateTeamId}
-                                                onChange={(event) =>
-                                                    setSelectedCreateTeamId(
-                                                        event.target.value,
-                                                    )
-                                                }
-                                                required
-                                                className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
-                                            >
-                                                <option value="">
-                                                    Select a team
-                                                </option>
-                                                {teams.map((team) => (
-                                                    <option
-                                                        key={team.id}
-                                                        value={team.id}
-                                                    >
-                                                        {team.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </>
-                                    )}
-                                    <label
-                                        htmlFor="taskTitle"
-                                        className="block text-sm font-medium text-slate-700"
-                                    >
-                                        Task title
-                                    </label>
-                                    <input
-                                        id="taskTitle"
-                                        type="text"
-                                        placeholder="Enter task title"
-                                        value={newTaskTitle}
-                                        onChange={(event) =>
-                                            setNewTaskTitle(event.target.value)
-                                        }
-                                        className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                                    />
-                                    <label
-                                        htmlFor="taskPriority"
-                                        className="mt-4 block text-sm font-medium text-slate-700"
-                                    >
+                    <button
+                        type="button"
+                        onClick={() => setActiveFilter("In progress")}
+                        className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                            activeFilter === "In progress"
+                                ? "bg-indigo-600 text-white"
+                                : "bg-white text-slate-600 hover:bg-slate-200"
+                        }`}
+                    >
+                        In progress
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => setActiveFilter("Completed")}
+                        className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                            activeFilter === "Completed"
+                                ? "bg-indigo-600 text-white"
+                                : "bg-white text-slate-600 hover:bg-slate-200"
+                        }`}
+                    >
+                        Completed
+                    </button>
+                </div>
+
+                <p className="mt-4 text-sm text-slate-500">
+                    Showing {filteredTasks.length}{" "}
+                    {filteredTasks.length === 1 ? "task" : "tasks"}
+                </p>
+                <section className="mt-4 overflow-hidden rounded-lg bg-white shadow-sm">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-slate-50 text-slate-500">
+                                <tr>
+                                    <th className="px-3 py-2 font-medium">
+                                        Task
+                                    </th>
+                                    <th className="px-3 py-2 font-medium">
+                                        Status
+                                    </th>
+                                    <th className="px-3 py-2 font-medium">
                                         Priority
-                                    </label>
-                                    <select
-                                        id="taskPriority"
-                                        value={newTaskPriority}
-                                        onChange={(event) =>
-                                            setNewTaskPriority(
-                                                event.target.value,
-                                            )
-                                        }
-                                        className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                                    >
-                                        <option value="Low">Low</option>
-                                        <option value="Medium">Medium</option>
-                                        <option value="High">High</option>
-                                    </select>
-                                    <label
-                                        htmlFor="taskDueDate"
-                                        className="mt-4 block text-sm font-medium text-slate-700"
-                                    >
+                                    </th>
+                                    <th className="px-3 py-2 font-medium">
                                         Due date
-                                    </label>
-                                    <input
-                                        id="taskDueDate"
-                                        type="date"
-                                        value={newTaskDueDate}
-                                        onChange={(event) =>
-                                            setNewTaskDueDate(
-                                                event.target.value,
-                                            )
-                                        }
-                                        className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                                    />
-                                    <button
-                                        type="submit"
-                                        className="mt-4 mr-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-                                    >
-                                        Create task
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowCreateForm(false)}
-                                        className="mt-4 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                                    >
-                                        Cancel
-                                    </button>
-                                </form>
-                            </div>
-                        )}
-                        {editingTaskId !== null && (
-                            <div className="mt-6 rounded-xl bg-white p-6 shadow-sm">
-                                <h2 className="text-lg font-semibold text-slate-900">
-                                    Edit task
-                                </h2>
+                                    </th>
+                                    <th className="px-3 py-2 font-medium">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
 
-                                <form
-                                    className="mt-4"
-                                    onSubmit={handleUpdateTask}
-                                >
-                                    <label
-                                        htmlFor="editTaskTitle"
-                                        className="block text-sm font-medium text-slate-700"
-                                    >
-                                        Task title
-                                    </label>
-
-                                    <input
-                                        id="editTaskTitle"
-                                        type="text"
-                                        value={editTaskTitle}
-                                        onChange={(event) =>
-                                            setEditTaskTitle(event.target.value)
-                                        }
-                                        className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                                    />
-                                    <label className="block">
-                                        <span className="mb-1 block text-sm font-medium">
-                                            Status
-                                        </span>
-                                        <select
-                                            value={editTaskStatus}
-                                            onChange={(event) =>
-                                                setEditTaskStatus(
-                                                    event.target.value,
-                                                )
-                                            }
-                                            className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                            <tbody>
+                                {filteredTasks.length > 0 ? (
+                                    filteredTasks.map((task) => (
+                                        <tr
+                                            key={task.id}
+                                            className="border-t border-slate-100"
                                         >
-                                            <option value="To do">To do</option>
-                                            <option value="In progress">
-                                                In progress
-                                            </option>
-                                            <option value="Completed">
-                                                Completed
-                                            </option>
-                                        </select>
-                                    </label>
-                                    <label className="block">
-                                        <span className="mb-1 block text-sm font-medium">
-                                            Priority
-                                        </span>
-                                        <select
-                                            value={editTaskPriority}
-                                            onChange={(event) =>
-                                                setEditTaskPriority(
-                                                    event.target.value,
-                                                )
-                                            }
-                                            className="w-full rounded-lg border border-gray-300 px-3 py-2"
-                                        >
-                                            <option value="Low">Low</option>
-                                            <option value="Medium">
-                                                Medium
-                                            </option>
-                                            <option value="High">High</option>
-                                        </select>
-                                    </label>
-                                    <label className="block">
-                                        <span className="mb-1 block text-sm font-medium">
-                                            Due date
-                                        </span>
-                                        <input
-                                            type="date"
-                                            value={editTaskDueDate}
-                                            onChange={(event) =>
-                                                setEditTaskDueDate(
-                                                    event.target.value,
-                                                )
-                                            }
-                                            className="w-full rounded-lg border border-gray-300 px-3 py-2"
-                                        />
-                                    </label>
+                                            <td className="px-3 py-3 font-medium text-slate-800">
+                                                {task.title}
+                                            </td>
 
-                                    <button
-                                        type="submit"
-                                        className="mt-4 mr-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-                                    >
-                                        Save changes
-                                    </button>
+                                            <td className="px-3 py-3">
+                                                <span
+                                                    className={`rounded-full px-3 py-1 text-xs font-medium ${
+                                                        task.status ===
+                                                        "Completed"
+                                                            ? "bg-green-100 text-green-700"
+                                                            : task.status ===
+                                                                "In progress"
+                                                              ? "bg-indigo-100 text-indigo-700"
+                                                              : "bg-amber-100 text-amber-700"
+                                                    }`}
+                                                >
+                                                    {task.status}
+                                                </span>
+                                            </td>
 
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setEditingTaskId(null);
-                                            setEditTaskTitle("");
-                                        }}
-                                        className="mt-4 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                                    >
-                                        Cancel
-                                    </button>
-                                </form>
-                            </div>
-                        )}
-                        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                            {stats.map((stat) => (
-                                <div
-                                    key={stat.label}
-                                    className="rounded-xl bg-white p-6 shadow-sm"
-                                >
-                                    <p className="text-sm text-slate-500">
-                                        {stat.label}
-                                    </p>
+                                            <td className="px-3 py-3">
+                                                <span
+                                                    className={`text-xs font-semibold ${
+                                                        task.priority === "High"
+                                                            ? "text-red-600"
+                                                            : task.priority ===
+                                                                "Medium"
+                                                              ? "text-amber-600"
+                                                              : "text-slate-500"
+                                                    }`}
+                                                >
+                                                    {task.priority}
+                                                </span>
+                                            </td>
 
-                                    <p className="mt-2 text-3xl font-bold text-slate-900">
-                                        {stat.value}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="mt-6 flex flex-wrap gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setActiveFilter("All")}
-                                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                                    activeFilter === "All"
-                                        ? "bg-indigo-600 text-white"
-                                        : "bg-white text-slate-600 hover:bg-slate-200"
-                                }`}
-                            >
-                                All
-                            </button>
+                                            <td className="px-3 py-3 text-slate-600">
+                                                {formatDueDate(task.dueDate)}
+                                            </td>
+                                            <td className="px-3 py-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setShowCreateForm(
+                                                            false,
+                                                        );
+                                                        setEditingTaskId(
+                                                            task.id,
+                                                        );
+                                                        setEditTaskTitle(
+                                                            task.title,
+                                                        );
+                                                        setEditTaskStatus(
+                                                            task.status,
+                                                        );
+                                                        setEditTaskPriority(
+                                                            task.priority,
+                                                        );
+                                                        setEditTaskDueDate(
+                                                            task.dueDate
+                                                                ? task.dueDate.slice(
+                                                                      0,
+                                                                      10,
+                                                                  )
+                                                                : "",
+                                                        );
+                                                    }}
+                                                    className="mr-3 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                                                >
+                                                    Edit
+                                                </button>
 
-                            <button
-                                type="button"
-                                onClick={() => setActiveFilter("To do")}
-                                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                                    activeFilter === "To do"
-                                        ? "bg-indigo-600 text-white"
-                                        : "bg-white text-slate-600 hover:bg-slate-200"
-                                }`}
-                            >
-                                To do
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => setActiveFilter("In progress")}
-                                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                                    activeFilter === "In progress"
-                                        ? "bg-indigo-600 text-white"
-                                        : "bg-white text-slate-600 hover:bg-slate-200"
-                                }`}
-                            >
-                                In progress
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => setActiveFilter("Completed")}
-                                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                                    activeFilter === "Completed"
-                                        ? "bg-indigo-600 text-white"
-                                        : "bg-white text-slate-600 hover:bg-slate-200"
-                                }`}
-                            >
-                                Completed
-                            </button>
-                        </div>
-
-                        <p className="mt-4 text-sm text-slate-500">
-                            Showing {filteredTasks.length}{" "}
-                            {filteredTasks.length === 1 ? "task" : "tasks"}
-                        </p>
-                        <section className="mt-4 overflow-hidden rounded-lg bg-white shadow-sm">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-slate-50 text-slate-500">
-                                        <tr>
-                                            <th className="px-3 py-2 font-medium">
-                                                Task
-                                            </th>
-                                            <th className="px-3 py-2 font-medium">
-                                                Status
-                                            </th>
-                                            <th className="px-3 py-2 font-medium">
-                                                Priority
-                                            </th>
-                                            <th className="px-3 py-2 font-medium">
-                                                Due date
-                                            </th>
-                                            <th className="px-3 py-2 font-medium">
-                                                Actions
-                                            </th>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setTaskToDelete(task)
+                                                    }
+                                                    className="text-sm font-medium text-red-600 hover:text-red-700"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </td>
                                         </tr>
-                                    </thead>
-
-                                    <tbody>
-                                        {filteredTasks.length > 0 ? (
-                                            filteredTasks.map((task) => (
-                                                <tr
-                                                    key={task.id}
-                                                    className="border-t border-slate-100"
-                                                >
-                                                    <td className="px-3 py-3 font-medium text-slate-800">
-                                                        {task.title}
-                                                    </td>
-
-                                                    <td className="px-3 py-3">
-                                                        <span
-                                                            className={`rounded-full px-3 py-1 text-xs font-medium ${
-                                                                task.status ===
-                                                                "Completed"
-                                                                    ? "bg-green-100 text-green-700"
-                                                                    : task.status ===
-                                                                        "In progress"
-                                                                      ? "bg-indigo-100 text-indigo-700"
-                                                                      : "bg-amber-100 text-amber-700"
-                                                            }`}
-                                                        >
-                                                            {task.status}
-                                                        </span>
-                                                    </td>
-
-                                                    <td className="px-3 py-3">
-                                                        <span
-                                                            className={`text-xs font-semibold ${
-                                                                task.priority ===
-                                                                "High"
-                                                                    ? "text-red-600"
-                                                                    : task.priority ===
-                                                                        "Medium"
-                                                                      ? "text-amber-600"
-                                                                      : "text-slate-500"
-                                                            }`}
-                                                        >
-                                                            {task.priority}
-                                                        </span>
-                                                    </td>
-
-                                                    <td className="px-3 py-3 text-slate-600">
-                                                        {formatDueDate(
-                                                            task.dueDate,
-                                                        )}
-                                                    </td>
-                                                    <td className="px-3 py-3">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setShowCreateForm(
-                                                                    false,
-                                                                );
-                                                                setEditingTaskId(
-                                                                    task.id,
-                                                                );
-                                                                setEditTaskTitle(
-                                                                    task.title,
-                                                                );
-                                                                setEditTaskStatus(
-                                                                    task.status,
-                                                                );
-                                                                setEditTaskPriority(
-                                                                    task.priority,
-                                                                );
-                                                                setEditTaskDueDate(
-                                                                    task.dueDate
-                                                                        ? task.dueDate.slice(
-                                                                              0,
-                                                                              10,
-                                                                          )
-                                                                        : "",
-                                                                );
-                                                            }}
-                                                            className="mr-3 text-sm font-medium text-indigo-600 hover:text-indigo-700"
-                                                        >
-                                                            Edit
-                                                        </button>
-
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleDeleteTask(
-                                                                    task.id,
-                                                                )
-                                                            }
-                                                            className="text-sm font-medium text-red-600 hover:text-red-700"
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <td
-                                                    colSpan={5}
-                                                    className="px-6 py-12 text-center"
-                                                >
-                                                    <p className="text-sm font-medium text-gray-900">
-                                                        No tasks found
-                                                    </p>
-                                                    <p className="mt-1 text-sm text-gray-500">
-                                                        Try changing the filter
-                                                        or create a new task.
-                                                    </p>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            setActiveFilter(
-                                                                "All",
-                                                            )
-                                                        }
-                                                        className="mt-4 text-sm font-medium text-indigo-600 hover:text-indigo-700"
-                                                    >
-                                                        Clear filter
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </section>
-                    </>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td
+                                            colSpan={5}
+                                            className="px-6 py-12 text-center"
+                                        >
+                                            <p className="text-sm font-medium text-gray-900">
+                                                No tasks found
+                                            </p>
+                                            <p className="mt-1 text-sm text-gray-500">
+                                                Try changing the filter or
+                                                create a new task.
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setActiveFilter("All")
+                                                }
+                                                className="mt-4 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                                            >
+                                                Clear filter
+                                            </button>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </>
+            <ConfirmModal
+                isOpen={taskToDelete !== null}
+                title="Delete task?"
+                message={
+                    taskToDelete
+                        ? `Are you sure you want to delete "${taskToDelete.title}"? This action cannot be undone.`
+                        : ""
+                }
+                confirmText="Delete task"
+                isDestructive
+                isLoading={deletingTask}
+                onConfirm={handleDeleteTask}
+                onCancel={() => {
+                    if (!deletingTask) setTaskToDelete(null);
+                }}
+            />
         </AppLayout>
     );
 }

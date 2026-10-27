@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
@@ -94,7 +93,7 @@ export default function AppLayout({ children, title, actions }) {
             >
                 <div className="flex items-center justify-between border-b border-slate-700 px-5 py-4">
                     <Link
-                        to="/dashboard"
+                        to="/"
                         onClick={() => setIsMenuOpen(false)}
                         className="text-xl font-bold tracking-tight"
                     >
@@ -204,9 +203,7 @@ export default function AppLayout({ children, title, actions }) {
                                     <Link
                                         to="/settings"
                                         role="menuitem"
-                                        onClick={() =>
-                                            setIsProfileOpen(false)
-                                        }
+                                        onClick={() => setIsProfileOpen(false)}
                                         className="block px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50"
                                     >
                                         Settings

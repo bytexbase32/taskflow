@@ -1,3 +1,4 @@
+import ConfirmModal from "../components/ConfirmModal";
 import AppLayout from "../components/AppLayout";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -16,6 +17,8 @@ export default function Teams() {
     const [memberEmail, setMemberEmail] = useState("");
     const [addingMember, setAddingMember] = useState(false);
     const [success, setSuccess] = useState("");
+    const [memberToRemove, setMemberToRemove] = useState(null);
+    const [removingMember, setRemovingMember] = useState(false);
 
     useEffect(() => {
         let ignore = false;
@@ -88,28 +91,31 @@ export default function Teams() {
         }
     }
 
-    async function handleRemoveMember(userId) {
-        const confirmed = window.confirm(
-            "Are you sure you want to remove this member from the team?",
-        );
+    async function handleRemoveMember() {
+        if (!selectedTeam || !memberToRemove || removingMember) return;
 
-        if (!confirmed) return;
-
-        if (!selectedTeam) return;
-
+        setRemovingMember(true);
         setError("");
         setSuccess("");
 
         try {
             await apiRequest(
-                `/teams/${selectedTeam.id}/removeMember?user_id=${userId}`,
+                `/teams/${selectedTeam.id}/removeMember?user_id=${memberToRemove.id}`,
                 { method: "POST" },
             );
 
-            await handleViewMembers(selectedTeam);
+            setMembers((currentMembers) =>
+                currentMembers.filter(
+                    (member) => member.id !== memberToRemove.id,
+                ),
+            );
+
             setSuccess("Member removed successfully.");
+            setMemberToRemove(null);
         } catch (err) {
             setError(err.message);
+        } finally {
+            setRemovingMember(false);
         }
     }
 
@@ -282,8 +288,8 @@ export default function Teams() {
                                                 <button
                                                     type="button"
                                                     onClick={() =>
-                                                        handleRemoveMember(
-                                                            member.id,
+                                                        setMemberToRemove(
+                                                            member,
                                                         )
                                                     }
                                                     className="text-sm font-medium text-red-600 hover:text-red-700"
@@ -357,6 +363,22 @@ export default function Teams() {
                     {saving ? "Creating..." : "Create team"}
                 </button>
             </form>
+            <ConfirmModal
+                isOpen={memberToRemove !== null}
+                title="Remove team member?"
+                message={
+                    memberToRemove
+                        ? `Are you sure you want to remove ${memberToRemove.name} from "${selectedTeam?.name}"?`
+                        : ""
+                }
+                confirmText="Remove member"
+                isDestructive
+                isLoading={removingMember}
+                onConfirm={handleRemoveMember}
+                onCancel={() => {
+                    if (!removingMember) setMemberToRemove(null);
+                }}
+            />
         </AppLayout>
     );
 }
