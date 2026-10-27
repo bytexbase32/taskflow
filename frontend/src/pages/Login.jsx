@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { API_URL } from "../api";
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -24,19 +25,16 @@ export default function Login() {
         setIsSubmitting(true);
 
         try {
-            const response = await fetch(
-                "/api/v1/auth/login",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        email: email.trim(),
-                        password,
-                    }),
+            const response = await fetch(`${API_URL}/auth/login`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
                 },
-            );
+                body: JSON.stringify({
+                    email: email.trim(),
+                    password,
+                }),
+            });
 
             const responseBody = await response.json().catch(() => null);
 

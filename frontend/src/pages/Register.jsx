@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-
+import { API_URL } from "../api";
 export default function Register() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -26,20 +26,17 @@ export default function Register() {
         }
         setIsSubmitting(true);
         try {
-            const response = await fetch(
-                "/api/v1/auth/register",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        name: name.trim(),
-                        email: email.trim(),
-                        password,
-                    }),
+            const response = await fetch(`${API_URL}/auth/register`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
                 },
-            );
+                body: JSON.stringify({
+                    name: name.trim(),
+                    email: email.trim(),
+                    password,
+                }),
+            });
 
             const responseBody = await response.json().catch(() => null);
 
