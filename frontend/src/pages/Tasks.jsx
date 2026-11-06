@@ -340,27 +340,42 @@ export default function Tasks() {
                                         Team
                                     </label>
 
-                                    <select
-                                        id="createTaskTeam"
-                                        value={selectedCreateTeamId}
-                                        onChange={(event) =>
-                                            setSelectedCreateTeamId(
-                                                event.target.value,
-                                            )
-                                        }
-                                        required
-                                        className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
-                                    >
-                                        <option value="">Select a team</option>
-                                        {teams.map((team) => (
-                                            <option
-                                                key={team.id}
-                                                value={team.id}
-                                            >
-                                                {team.name}
+                                    {teamsLoading ? (
+                                        <p className="mt-2 text-sm text-slate-500">
+                                            Loading teams...
+                                        </p>
+                                    ) : teamsError ? (
+                                        <p
+                                            role="alert"
+                                            className="mt-2 text-sm text-red-600"
+                                        >
+                                            Failed to load teams: {teamsError}
+                                        </p>
+                                    ) : (
+                                        <select
+                                            id="createTaskTeam"
+                                            value={selectedCreateTeamId}
+                                            onChange={(event) =>
+                                                setSelectedCreateTeamId(
+                                                    event.target.value,
+                                                )
+                                            }
+                                            required
+                                            className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
+                                        >
+                                            <option value="">
+                                                Select a team
                                             </option>
-                                        ))}
-                                    </select>
+                                            {teams.map((team) => (
+                                                <option
+                                                    key={team.id}
+                                                    value={team.id}
+                                                >
+                                                    {team.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    )}
                                 </>
                             )}
                             <label
@@ -414,7 +429,12 @@ export default function Tasks() {
                             />
                             <button
                                 type="submit"
-                                className="mt-4 mr-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+                                disabled={
+                                    teamsLoading ||
+                                    !!teamsError ||
+                                    teams.length === 0
+                                }
+                                className="mt-4 mr-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 Create task
                             </button>
@@ -530,7 +550,13 @@ export default function Tasks() {
                             </p>
 
                             <p className="mt-2 text-3xl font-bold text-slate-900">
-                                {stat.value}
+                                {loading ? (
+                                    <span className="inline-block h-8 w-12 animate-pulse rounded bg-slate-200" />
+                                ) : error ? (
+                                    "—"
+                                ) : (
+                                    stat.value
+                                )}
                             </p>
                         </div>
                     ))}
@@ -585,10 +611,12 @@ export default function Tasks() {
                     </button>
                 </div>
 
-                <p className="mt-4 text-sm text-slate-500">
-                    Showing {filteredTasks.length}{" "}
-                    {filteredTasks.length === 1 ? "task" : "tasks"}
-                </p>
+                {!loading && !error && (
+                    <p className="mt-4 text-sm text-slate-500">
+                        Showing {filteredTasks.length}{" "}
+                        {filteredTasks.length === 1 ? "task" : "tasks"}
+                    </p>
+                )}
                 <section className="mt-4 overflow-hidden rounded-lg bg-white shadow-sm">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
@@ -613,7 +641,28 @@ export default function Tasks() {
                             </thead>
 
                             <tbody>
-                                {filteredTasks.length > 0 ? (
+                                {loading ? (
+                                    <tr>
+                                        <td
+                                            colSpan={5}
+                                            className="px-6 py-12 text-center"
+                                        >
+                                            <div className="mx-auto h-5 w-32 animate-pulse rounded bg-slate-200" />
+                                            <p className="mt-3 text-sm text-slate-500">
+                                                Loading tasks...
+                                            </p>
+                                        </td>
+                                    </tr>
+                                ) : error ? (
+                                    <tr>
+                                        <td
+                                            colSpan={5}
+                                            className="px-6 py-12 text-center text-sm text-red-600"
+                                        >
+                                            Unable to load tasks.
+                                        </td>
+                                    </tr>
+                                ) : filteredTasks.length > 0 ? (
                                     filteredTasks.map((task) => (
                                         <tr
                                             key={task.id}

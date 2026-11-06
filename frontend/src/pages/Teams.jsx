@@ -19,6 +19,7 @@ export default function Teams() {
     const [success, setSuccess] = useState("");
     const [memberToRemove, setMemberToRemove] = useState(null);
     const [removingMember, setRemovingMember] = useState(false);
+    const [teamsError, setTeamsError] = useState("");
 
     useEffect(() => {
         let ignore = false;
@@ -32,7 +33,7 @@ export default function Teams() {
                 }
             } catch (err) {
                 if (!ignore) {
-                    setError(err.message);
+                    setTeamsError(err.message || "Failed to load teams.");
                 }
             } finally {
                 if (!ignore) {
@@ -174,7 +175,22 @@ export default function Teams() {
                 </h2>
 
                 {loading ? (
-                    <p className="mt-3 text-slate-600">Loading teams...</p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {[1, 2, 3].map((item) => (
+                            <div
+                                key={item}
+                                className="animate-pulse rounded-lg bg-white p-4 shadow-sm"
+                            >
+                                <div className="h-5 w-1/2 rounded bg-slate-200" />
+                                <div className="mt-3 h-4 w-3/4 rounded bg-slate-200" />
+                                <div className="mt-5 h-4 w-1/3 rounded bg-slate-200" />
+                            </div>
+                        ))}
+                    </div>
+                ) : teamsError ? (
+                    <p role="alert" className="mt-3 text-sm text-red-600">
+                        Failed to load teams: {teamsError}
+                    </p>
                 ) : teams.length === 0 ? (
                     <p className="mt-3 text-slate-600">
                         No teams yet. Create your first team below.

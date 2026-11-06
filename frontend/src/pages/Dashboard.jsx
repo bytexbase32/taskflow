@@ -23,7 +23,7 @@ export default function Dashboard() {
         loadTasks();
     }, []);
 
-    const [userName, setUserName] = useState(() => {
+    const [userName] = useState(() => {
         try {
             const user = JSON.parse(localStorage.getItem("user"));
             return user?.name || "User";
@@ -86,7 +86,13 @@ export default function Dashboard() {
                             <p
                                 className={`mt-1 text-2xl font-semibold ${stat.color}`}
                             >
-                                {stat.value}
+                                {loading ? (
+                                    <span className="inline-block h-7 w-10 animate-pulse rounded bg-slate-200" />
+                                ) : error ? (
+                                    "—"
+                                ) : (
+                                    stat.value
+                                )}
                             </p>
                         </div>
                     ))}
